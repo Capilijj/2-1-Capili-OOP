@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from tkinter import messagebox
+from PIL import Image, ImageTk, ImageDraw  
 import json
 import os
 
@@ -20,6 +21,14 @@ def save_users(users):
 ctk.set_appearance_mode("System")
 ctk.set_default_color_theme("dark-blue")
 
+def make_circle(img: Image.Image) -> Image.Image:
+    size = img.size
+    mask = Image.new('L', size, 0) 
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0, size[0], size[1]), fill=255)  
+    img = img.convert("RGBA") 
+    img.putalpha(mask)  
+    return img
 
 # ------------------------- LOGIN PAGE -------------------------
 class LoginPage(ctk.CTkFrame):
@@ -30,9 +39,16 @@ class LoginPage(ctk.CTkFrame):
         self.switch_to_forgot_password = switch_to_forgot_password
         self.pack(fill="both", expand=True)
 
-        self.card = ctk.CTkFrame(self, width=360, height=480, corner_radius=15, fg_color="white", border_width=3)
+        self.card = ctk.CTkFrame(self, width=360, height=550, corner_radius=15, fg_color="white", border_width=3)
         self.card.place(relx=0.5, rely=0.5, anchor="center")
         self.card.pack_propagate(False)
+
+        self.logo_img = Image.open(r"C:/Users/Admin/OneDrive/Desktop/python_project/logo.jpg")
+        self.logo_img = self.logo_img.resize((100, 100), Image.Resampling.LANCZOS)
+        self.logo_img = make_circle(self.logo_img)  
+        self.logo_photo = ImageTk.PhotoImage(self.logo_img)
+        self.logo_label = ctk.CTkLabel(self.card, image=self.logo_photo, text="")
+        self.logo_label.pack(pady=(10, 10))
 
         self.logo_label = ctk.CTkLabel(self.card, text="James Mangaker",
                                        font=ctk.CTkFont(size=24, weight="bold"), text_color="#333")
@@ -102,9 +118,16 @@ class RegisterPage(ctk.CTkFrame):
         self.switch_to_login = switch_to_login
         self.pack(fill="both", expand=True)
 
-        self.card = ctk.CTkFrame(self, width=360, height=500, corner_radius=15, fg_color="white", border_width=3)
+        self.card = ctk.CTkFrame(self, width=360, height=550, corner_radius=15, fg_color="white", border_width=3)
         self.card.place(relx=0.5, rely=0.5, anchor="center")
         self.card.pack_propagate(False)
+
+        self.logo_img = Image.open(r"C:/Users/Admin/OneDrive/Desktop/python_project/logo.jpg")
+        self.logo_img = self.logo_img.resize((100, 100), Image.Resampling.LANCZOS)
+        self.logo_img = make_circle(self.logo_img)  
+        self.logo_photo = ImageTk.PhotoImage(self.logo_img)
+        self.logo_label = ctk.CTkLabel(self.card, image=self.logo_photo, text="")
+        self.logo_label.pack(pady=(10, 10))
 
         self.title = ctk.CTkLabel(self.card, text="Create an Account",
                                   font=ctk.CTkFont(size=20, weight="bold"), text_color="#333")
@@ -164,7 +187,7 @@ class ForgotPasswordPage(ctk.CTkFrame):
         self.card = ctk.CTkFrame(self, width=360, height=350, corner_radius=15, fg_color="white", border_width=3)
         self.card.place(relx=0.5, rely=0.5, anchor="center")
         self.card.pack_propagate(False)
-
+    
         self.title = ctk.CTkLabel(self.card, text="Reset Password",
                                   font=ctk.CTkFont(size=20, weight="bold"), text_color="#333")
         self.title.pack(pady=(20, 10))
