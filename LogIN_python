@@ -1,0 +1,250 @@
+import customtkinter as ctk
+from tkinter import messagebox
+import json
+import os
+
+# JSON file para sa user data
+USER_FILE = "users.json"
+
+def load_users():
+    if os.path.exists(USER_FILE):
+        with open(USER_FILE, "r") as file:
+            return json.load(file)
+    return {}
+
+def save_users(users):
+    with open(USER_FILE, "w") as file:
+        json.dump(users, file)
+
+# Set appearance
+ctk.set_appearance_mode("System")
+ctk.set_default_color_theme("dark-blue")
+
+
+# ------------------------- LOGIN PAGE -------------------------
+class LoginPage(ctk.CTkFrame):
+    def __init__(self, parent, switch_to_register, switch_to_forgot_password):
+        super().__init__(parent)
+        self.parent = parent
+        self.switch_to_register = switch_to_register
+        self.switch_to_forgot_password = switch_to_forgot_password
+        self.pack(fill="both", expand=True)
+
+        self.card = ctk.CTkFrame(self, width=360, height=480, corner_radius=15, fg_color="white", border_width=3)
+        self.card.place(relx=0.5, rely=0.5, anchor="center")
+        self.card.pack_propagate(False)
+
+        self.logo_label = ctk.CTkLabel(self.card, text="James Mangaker",
+                                       font=ctk.CTkFont(size=24, weight="bold"), text_color="#333")
+        self.logo_label.pack(pady=(10, 10))
+
+        self.login_text = ctk.CTkLabel(self.card, text="Login to your account",
+                                       font=ctk.CTkFont(size=14, weight="bold"), text_color="#666")
+        self.login_text.pack(pady=(5, 10))
+
+        self.email_entry = ctk.CTkEntry(self.card, placeholder_text="Email", width=300, height=40)
+        self.email_entry.pack(pady=(5, 10))
+
+        self.password_entry = ctk.CTkEntry(self.card, placeholder_text="Password", show="*", width=300, height=40)
+        self.password_entry.pack(pady=(5, 10))
+
+        self.forgot_password = ctk.CTkLabel(self.card, text="Forgot Password?", text_color="#3b82f6",
+                                            cursor="hand2", font=ctk.CTkFont(size=12))
+        self.forgot_password.pack(anchor="e", padx=20)
+        self.forgot_password.bind("<Button-1>", lambda e: self.switch_to_forgot_password())
+
+        self.login_button = ctk.CTkButton(self.card, text="Log In", width=300, height=40, corner_radius=10, fg_color="#39ff14", hover_color="#28c20e",text_color="black", command=self.login_action)
+        self.login_button.pack(pady=(5, 15))
+
+        self.signup_frame = ctk.CTkFrame(self.card, fg_color="transparent")
+        self.signup_frame.pack(pady=(5, 15))
+
+        self.not_member_label = ctk.CTkLabel(self.signup_frame, text="Not a member?", text_color="#555")
+        self.not_member_label.pack(side="left")
+
+        self.create_account = ctk.CTkLabel(self.signup_frame, text="Create New Account", text_color="#3b82f6",
+                                           cursor="hand2")
+        self.create_account.pack(side="left", padx=(5, 10))
+        self.create_account.bind("<Button-1>", lambda e: self.switch_to_register())
+
+        self.divider = ctk.CTkLabel(self.card, text="────────  Or continue with  ────────", text_color="#aaa")
+        self.divider.pack(pady=5)
+
+        self.google_button = ctk.CTkButton(self.card, text="Continue with Google", width=300, height=40,
+                                           fg_color="white", text_color="black",
+                                           hover_color="#e5e7eb", border_width=1, border_color="#ccc",
+                                           command=self.google_action)
+        self.google_button.pack()
+
+    def login_action(self):
+        email = self.email_entry.get()
+        password = self.password_entry.get()
+
+        users = load_users()
+        user = users.get(email)
+
+        if not user:
+            messagebox.showerror("Login Failed", "No account found with that email.")
+        elif user["password"] != password:
+            messagebox.showerror("Login Failed", "Incorrect password.")
+        else:
+            messagebox.showinfo("Login Success", f"Welcome back, {user['username']}!")
+
+    def google_action(self):
+        messagebox.showinfo("Google", "Google login not yet implemented.")
+
+
+# ------------------------- REGISTER PAGE -------------------------
+class RegisterPage(ctk.CTkFrame):
+    def __init__(self, parent, switch_to_login):
+        super().__init__(parent)
+        self.parent = parent
+        self.switch_to_login = switch_to_login
+        self.pack(fill="both", expand=True)
+
+        self.card = ctk.CTkFrame(self, width=360, height=500, corner_radius=15, fg_color="white", border_width=3)
+        self.card.place(relx=0.5, rely=0.5, anchor="center")
+        self.card.pack_propagate(False)
+
+        self.title = ctk.CTkLabel(self.card, text="Create an Account",
+                                  font=ctk.CTkFont(size=20, weight="bold"), text_color="#333")
+        self.title.pack(pady=(20, 10))
+
+        self.username_entry = ctk.CTkEntry(self.card, placeholder_text="Username", width=300, height=40)
+        self.username_entry.pack(pady=10)
+
+        self.email_entry = ctk.CTkEntry(self.card, placeholder_text="Email", width=300, height=40)
+        self.email_entry.pack(pady=10)
+
+        self.password_entry = ctk.CTkEntry(self.card, placeholder_text="Password", show="*", width=300, height=40)
+        self.password_entry.pack(pady=10)
+
+        self.confirm_entry = ctk.CTkEntry(self.card, placeholder_text="Confirm Password", show="*", width=300, height=40)
+        self.confirm_entry.pack(pady=10)
+
+        self.register_button = ctk.CTkButton(self.card, text="Register", width=300, height=40, corner_radius=10,
+                                             fg_color="#39ff14", hover_color="#28c20e",text_color="black", command=self.register_action)
+        self.register_button.pack(pady=(10, 15))
+
+        self.login_link = ctk.CTkLabel(self.card, text="Back to Login", text_color="#3b82f6", cursor="hand2")
+        self.login_link.pack()
+        self.login_link.bind("<Button-1>", lambda e: self.switch_to_login())
+
+    def register_action(self):
+        username = self.username_entry.get()
+        email = self.email_entry.get()
+        password = self.password_entry.get()
+        confirm = self.confirm_entry.get()
+
+        if not username or not email or not password or not confirm:
+            messagebox.showerror("Error", "All fields are required.")
+        elif not email.endswith("@gmail.com"):
+            messagebox.showerror("Invalid Email", "Email must end with '@gmail.com'.")
+        elif password != confirm:
+            messagebox.showerror("Error", "Passwords do not match.")
+        else:
+            users = load_users()
+            if email in users:
+                messagebox.showerror("Error", "Email already exists.")
+            else:
+                users[email] = {"username": username, "password": password}
+                save_users(users)
+                messagebox.showinfo("Success", f"Account created for {username}!")
+                self.switch_to_login()
+
+
+# ------------------------- FORGOT PASSWORD PAGE -------------------------
+class ForgotPasswordPage(ctk.CTkFrame):
+    def __init__(self, parent, switch_to_login):
+        super().__init__(parent)
+        self.parent = parent
+        self.switch_to_login = switch_to_login
+        self.pack(fill="both", expand=True)
+
+        self.card = ctk.CTkFrame(self, width=360, height=350, corner_radius=15, fg_color="white", border_width=3)
+        self.card.place(relx=0.5, rely=0.5, anchor="center")
+        self.card.pack_propagate(False)
+
+        self.title = ctk.CTkLabel(self.card, text="Reset Password",
+                                  font=ctk.CTkFont(size=20, weight="bold"), text_color="#333")
+        self.title.pack(pady=(20, 10))
+
+        self.email_entry = ctk.CTkEntry(self.card, placeholder_text="Enter your registered Email", width=300, height=40)
+        self.email_entry.pack(pady=15)
+
+        self.new_password_entry = ctk.CTkEntry(self.card, placeholder_text="New Password", show="*", width=300, height=40)
+        self.new_password_entry.pack(pady=10)
+
+        self.confirm_password_entry = ctk.CTkEntry(self.card, placeholder_text="Confirm New Password", show="*", width=300, height=40)
+        self.confirm_password_entry.pack(pady=10)
+
+        self.reset_button = ctk.CTkButton(self.card, text="Reset Password", width=300, height=40, corner_radius=10,
+                                          fg_color="#39ff14", hover_color="#28c20e",text_color="black", command=self.reset_password)
+        self.reset_button.pack(pady=(10, 15))
+
+        self.back_to_login = ctk.CTkLabel(self.card, text="Back to Login", text_color="#3b82f6", cursor="hand2")
+        self.back_to_login.pack()
+        self.back_to_login.bind("<Button-1>", lambda e: self.switch_to_login())
+
+    def reset_password(self):
+        email = self.email_entry.get()
+        new_pass = self.new_password_entry.get()
+        confirm_pass = self.confirm_password_entry.get()
+
+        if not email or not new_pass or not confirm_pass:
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        if new_pass != confirm_pass:
+            messagebox.showerror("Error", "Passwords do not match.")
+            return
+
+        users = load_users()
+        if email not in users:
+            messagebox.showerror("Error", "Email not found.")
+            return
+
+        users[email]["password"] = new_pass
+        save_users(users)
+        messagebox.showinfo("Success", "Password has been reset!")
+        self.switch_to_login()
+
+
+# ------------------------- MAIN APP CONTAINER -------------------------
+class App(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.title("Login & Registration")
+        self.geometry("600x700")
+        self.resizable(True, False)
+        self.login_page = None
+        self.register_page = None
+        self.forgot_password_page = None
+        self.show_login()
+
+    def show_login(self):
+        if self.register_page:
+            self.register_page.destroy()
+        if self.forgot_password_page:
+            self.forgot_password_page.destroy()
+        self.login_page = LoginPage(self, self.show_register, self.show_forgot_password)
+
+    def show_register(self):
+        if self.login_page:
+            self.login_page.destroy()
+        if self.forgot_password_page:
+            self.forgot_password_page.destroy()
+        self.register_page = RegisterPage(self, self.show_login)
+
+    def show_forgot_password(self):
+        if self.login_page:
+            self.login_page.destroy()
+        if self.register_page:
+            self.register_page.destroy()
+        self.forgot_password_page = ForgotPasswordPage(self, self.show_login)
+
+
+# Run the app
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()
