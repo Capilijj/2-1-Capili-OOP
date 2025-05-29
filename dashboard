@@ -1,0 +1,268 @@
+import customtkinter as ctk
+from PIL import Image, ImageTk, ImageDraw
+import os
+
+
+# Helper to crop image in a circular shape
+def make_circle(img):
+    size = (min(img.size),) * 2
+    mask = Image.new('L', size, 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0) + size, fill=255)
+    output = Image.new('RGBA', size)
+    img = img.resize(size, Image.Resampling.LANCZOS)
+    output.paste(img, (0, 0), mask)
+    return output
+
+
+class DashboardPage(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+        self.active_button = None
+
+        # Top container
+        self.top_container = ctk.CTkFrame(self, height=60, fg_color="#39ff14", corner_radius=15)
+        self.top_container.pack(side="top", fill="x", pady=10, padx=10)
+
+        # Circle logo with no background frame
+        try:
+            self.logo_img = Image.open(r"C:/Users/Admin/OneDrive/Desktop/python_project/logo.jfif")
+            self.logo_img = self.logo_img.resize((40, 40), Image.Resampling.LANCZOS)
+            self.logo_img = make_circle(self.logo_img)
+            self.logo_photo = ImageTk.PhotoImage(self.logo_img)
+            self.logo = ctk.CTkLabel(self.top_container, image=self.logo_photo, text="")
+            self.logo.pack(side="left", padx=15, pady=10)
+        except Exception as e:
+            print("Logo loading failed:", e)
+
+        # Common style for buttons
+        button_style = {
+            "fg_color": "#39ff14",
+            "hover_color": "#1f8112",
+            "text_color": "black",
+            "corner_radius": 10,
+        }
+
+        # Navigation buttons
+        self.home_button = ctk.CTkButton(self.top_container, text="Home", command=self.home_action, **button_style)
+        self.home_button.pack(side="left", padx=10, pady=10)
+
+        self.bookmark_button = ctk.CTkButton(self.top_container, text="Bookmark", command=self.bookmark_action, **button_style)
+        self.bookmark_button.pack(side="left", padx=10, pady=10)
+
+        self.profile_button = ctk.CTkButton(self.top_container, text="Profile", command=self.profile_action, **button_style)
+        self.profile_button.pack(side="left", padx=10, pady=10)
+
+        # Search bar setup
+        self.search_frame = ctk.CTkFrame(self.top_container, width=240, height=36)
+        self.search_frame.pack(side="right", pady=10, padx=10)
+        self.search_frame.pack_propagate(False)
+
+        self.search_entry = ctk.CTkEntry(self.search_frame, placeholder_text="Search...")
+        self.search_entry.pack(side="left", fill="both", expand=True)
+        self.search_entry.bind("<Return>", self.on_enter_pressed)
+
+        # Search icon for main search (glass1.gif)
+        main_search_icon_path = r"C:/Users/Admin/OneDrive/Desktop/python_project/glass1.gif"
+        if os.path.exists(main_search_icon_path):
+            main_icon_img = Image.open(main_search_icon_path).resize((25, 25), Image.Resampling.LANCZOS)
+            self.search_icon = ImageTk.PhotoImage(main_icon_img)
+        else:
+            self.search_icon = None
+            print(f"Image not found: {main_search_icon_path}")
+
+        self.search_icon_button = ctk.CTkButton(
+            self.search_frame,
+            image=self.search_icon,
+            width=36,
+            height=36,
+            fg_color="#FFFFFF",
+            corner_radius=0,
+            text="",
+            command=self.search_action,
+        )
+        self.search_icon_button.pack(side="right")
+
+        # --- Filter row frame below top_container ---
+        self.filter_row_frame = ctk.CTkFrame(self, fg_color="transparent", height=50)
+        self.filter_row_frame.pack(side="top", fill="x", pady=(0, 10))
+        self.filter_row_frame.pack_propagate(False)  # fix height so it doesn't shrink
+
+        # Inner frame to hold filter widgets centered horizontally
+        self.filter_inner_frame = ctk.CTkFrame(self.filter_row_frame, fg_color="transparent")
+        self.filter_inner_frame.place(relx=0.5, rely=0, anchor="n")
+
+        # Filter search BUTTON (with separate image glass2.png)
+        filter_search_icon_path = r"C:/Users/Admin/OneDrive/Desktop/python_project/glass2.png"
+        if os.path.exists(filter_search_icon_path):
+            filter_icon_img = Image.open(filter_search_icon_path).resize((25, 25), Image.Resampling.LANCZOS)
+            self.filter_search_icon = ImageTk.PhotoImage(filter_icon_img)
+        else:
+            self.filter_search_icon = None
+            print(f"Image not found: {filter_search_icon_path}")
+
+        if self.filter_search_icon is not None:
+            self.filter_search_button = ctk.CTkButton(
+                self.filter_inner_frame,
+                text="Search by title",
+                image=self.filter_search_icon,
+                compound="left",
+                command=self.filter_search_action,
+                fg_color="#39ff14",
+                hover_color="#1f8112",
+                text_color="black",
+                corner_radius=10,
+            )
+        else:
+            self.filter_search_button = ctk.CTkButton(
+                self.filter_inner_frame,
+                text="Search by title",
+                command=self.filter_search_action,
+                fg_color="#39ff14",
+                hover_color="#1f8112",
+                text_color="black",
+                corner_radius=10,
+            )
+        # Use grid for filter widgets now
+        self.filter_search_button.grid(row=0, column=0, padx=5, pady=5)
+
+        # Expanded list of manga genres for dropdown
+        self.genres = [
+            "Action", "Adventure", "Comedy", "Drama", "Fantasy", "Romance",
+            "Shounen", "Shoujo", "Seinen", "Josei", "Sci-Fi", "Horror",
+            "Sports", "Slice of Life", "Mystery", "Mecha", "Supernatural",
+            "Historical", "Ecchi", "Isekai"
+        ]
+
+        # Genre single-select dropdown
+        self.genre_option_menu = ctk.CTkOptionMenu(self.filter_inner_frame, values=self.genres)
+        self.genre_option_menu.set("Genre")
+        self.genre_option_menu.grid(row=0, column=1, padx=5, pady=5)
+
+        # Status dropdown (single select)
+        self.status_option = ctk.CTkOptionMenu(self.filter_inner_frame, values=["All", "Ongoing", "Completed"])
+        self.status_option.set("Status")
+        self.status_option.grid(row=0, column=2, padx=5, pady=5)
+
+        # Order by dropdown (single select)
+        self.order_option = ctk.CTkOptionMenu(self.filter_inner_frame, values=["Latest", "Popular", "A-Z"])
+        self.order_option.set("Order By")
+        self.order_option.grid(row=0, column=3, padx=5, pady=5)
+
+        # Change dropdown backgrounds to grey (#4b4848)
+        grey_bg = "#4b4848"
+        self.genre_option_menu.configure(fg_color=grey_bg)
+        self.status_option.configure(fg_color=grey_bg)
+        self.order_option.configure(fg_color=grey_bg)
+
+        # Main content container
+        self.content_container = ctk.CTkFrame(self)
+        self.content_container.pack(fill="both", expand=True)
+
+        self.content = ctk.CTkLabel(self.content_container, text="", font=ctk.CTkFont(size=16))
+        self.content.pack(anchor="n", pady=20)
+
+        # Placeholder when no search is entered
+        self.empty_placeholder = ctk.CTkLabel(
+            self, text="No search input", font=ctk.CTkFont(size=16), text_color="gray"
+        )
+        self.empty_placeholder.place(relx=0.5, rely=0.5, anchor="center")
+
+        # Initialize with Home as active and filters visible
+        self.set_active_button(self.home_button)
+        self.content.configure(text="Home Page")
+        self.empty_placeholder.place_forget()
+        self.update_filter_visibility()  # Make sure filters are visible initially
+
+    def set_active_button(self, active_btn):
+        for btn in [self.home_button, self.bookmark_button, self.profile_button]:
+            btn.configure(border_color="black", border_width=0)
+        active_btn.configure(border_color="black", border_width=2)
+        self.active_button = active_btn
+
+    def update_filter_visibility(self):
+        if self.active_button == self.home_button:
+            self.filter_row_frame.pack(side="top", fill="x", pady=(0, 10), before=self.content_container)
+            for idx, widget in enumerate(self.filter_inner_frame.winfo_children()):
+                widget.grid(row=0, column=idx, padx=5, pady=5)
+        else:
+            # Hide filter widgets but keep the frame height fixed
+            for widget in self.filter_inner_frame.winfo_children():
+                widget.grid_remove()
+            self.filter_row_frame.pack_forget()
+            
+    def on_enter_pressed(self, event):
+        self.search_action()
+
+    def home_action(self):
+        self.content.configure(text="Home Page")
+        self.set_active_button(self.home_button)
+
+        # Reset dropdowns and search entry
+        self.search_entry.delete(0, "end")
+        self.genre_option_menu.set("Genre")
+        self.status_option.set("Status")
+        self.order_option.set("Order By")
+
+        self.empty_placeholder.place_forget()
+        self.show_content()
+        self.update_filter_visibility()
+
+    def bookmark_action(self):
+        self.content.configure(text="Bookmarks")
+        self.set_active_button(self.bookmark_button)
+        self.show_content()
+        self.update_filter_visibility()
+
+    def profile_action(self):
+        self.content.configure(text="Profile Page")
+        self.set_active_button(self.profile_button)
+        self.show_content()
+        self.update_filter_visibility()
+
+    def search_action(self):
+        query = self.search_entry.get().strip()
+        if query:
+            print("Searching for:", query)
+            self.content.configure(text=f"Searching for: {query}")
+            self.empty_placeholder.place_forget()
+            self.show_content()
+        else:
+            self.content.configure(text="")
+            self.hide_content()
+            self.empty_placeholder.place(relx=0.5, rely=0.5, anchor="center")
+
+    def filter_search_action(self):
+        selected_genre = self.genre_option_menu.get()
+        selected_status = self.status_option.get()
+        selected_order = self.order_option.get()
+        print(f"Filter search clicked with Genre: {selected_genre}, Status: {selected_status}, Order: {selected_order}")
+        self.content.configure(text=f"Filter search: {selected_genre}, {selected_status}, {selected_order}")
+        self.show_content()
+
+    def show_content(self):
+        self.empty_placeholder.place_forget()
+        self.content_container.pack(fill="both", expand=True)
+
+    def hide_content(self):
+        self.content_container.pack_forget()
+
+
+# Run the app
+class App(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.title("Dashboard Test")
+        self.geometry("600x700")
+
+        self.dashboard = DashboardPage(self, controller=self)
+        self.dashboard.pack(fill="both", expand=True)
+
+
+if __name__ == "__main__":
+    ctk.set_appearance_mode("System")
+    ctk.set_default_color_theme("green")
+    app = App()
+    app.mainloop()
+
